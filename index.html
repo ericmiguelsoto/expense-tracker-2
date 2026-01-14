@@ -1,0 +1,1588 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>My Expense Tracker</title>
+    
+    <!-- PWA Meta Tags -->
+    <link rel="manifest" href="manifest.json">
+    <meta name="theme-color" content="#1a1a2e">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <meta name="apple-mobile-web-app-title" content="Expenses">
+    <link rel="apple-touch-icon" href="icon-192.png">
+    
+    <style>
+        /* ============================================
+           BASE STYLES: Overall page setup
+           ============================================ */
+        
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background-color: #f8f9fa;
+            color: #2d3436;
+            line-height: 1.6;
+            min-height: 100vh;
+            padding: 20px;
+        }
+
+        /* ============================================
+           LAYOUT: Container and sections
+           ============================================ */
+        
+        header {
+            text-align: center;
+            padding: 30px 0;
+        }
+        
+        h1 {
+            font-weight: 600;
+            font-size: 1.8rem;
+            color: #1a1a2e;
+            letter-spacing: -0.5px;
+        }
+        
+        section {
+            background: #ffffff;
+            border-radius: 12px;
+            padding: 24px;
+            margin-bottom: 16px;
+            max-width: 500px;
+            margin-left: auto;
+            margin-right: auto;
+        }
+        
+        h2 {
+            font-weight: 500;
+            font-size: 1rem;
+            color: #636e72;
+            margin-bottom: 16px;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        /* ============================================
+           BUDGET DISPLAY
+           ============================================ */
+        
+        #budget-display, #spent-display, #remaining-display {
+            font-weight: 600;
+        }
+        
+        section p {
+            margin: 8px 0;
+            font-size: 1rem;
+            color: #4a4a4a;
+        }
+
+        /* ============================================
+           FORM ELEMENTS
+           ============================================ */
+        
+        label {
+            display: block;
+            font-size: 0.85rem;
+            color: #636e72;
+            margin-bottom: 6px;
+            margin-top: 16px;
+        }
+        
+        label:first-of-type {
+            margin-top: 0;
+        }
+        
+        input, select {
+            width: 100%;
+            padding: 12px 14px;
+            border: 1px solid #e0e0e0;
+            border-radius: 8px;
+            font-size: 1rem;
+            background: #fafafa;
+            transition: border-color 0.2s, background-color 0.2s;
+        }
+        
+        input:focus, select:focus {
+            outline: none;
+            border-color: #4a6fa5;
+            background: #ffffff;
+        }
+        
+        input::placeholder {
+            color: #b0b0b0;
+        }
+
+        /* Budget input row */
+        section > div:first-of-type {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            margin-bottom: 20px;
+        }
+        
+        section > div:first-of-type label {
+            margin: 0;
+            white-space: nowrap;
+        }
+        
+        section > div:first-of-type input {
+            flex: 1;
+        }
+
+        /* ============================================
+           BUTTONS
+           ============================================ */
+        
+        button {
+            background: #1a1a2e;
+            color: #ffffff;
+            border: none;
+            padding: 12px 24px;
+            border-radius: 8px;
+            font-size: 1rem;
+            font-weight: 500;
+            cursor: pointer;
+            transition: background-color 0.2s, transform 0.1s;
+        }
+        
+        button:hover {
+            background: #2d3436;
+        }
+        
+        button:active {
+            transform: scale(0.98);
+        }
+        
+        #add-expense-btn {
+            width: 100%;
+            margin-top: 24px;
+        }
+        
+        #set-budget-btn {
+            padding: 12px 20px;
+        }
+
+        /* ============================================
+           EXPENSE LIST
+           ============================================ */
+        
+        #expense-list {
+            margin-top: 8px;
+            display: flex;
+            flex-direction: column;
+            align-items: flex-start;
+            text-align: left;
+        }
+        
+        #expense-list > .expense-item {
+            width: calc(100% + 24px);
+            border-bottom: 1px solid #f0f0f0;
+        }
+        
+        #expense-list > .expense-item:last-child {
+            border-bottom: none;
+        }
+        
+        #expense-list p {
+            color: #9a9a9a;
+            font-size: 0.95rem;
+        }
+
+        /* ============================================
+           NAVIGATION BAR
+           ============================================ */
+        
+        nav {
+            position: fixed;
+            bottom: 0;
+            left: 0;
+            right: 0;
+            background: #ffffff;
+            display: flex;
+            justify-content: center;
+            gap: 40px;
+            padding: 16px 0;
+            border-top: 1px solid #f0f0f0;
+        }
+        
+        nav button {
+            background: none;
+            color: #b0b0b0;
+            padding: 8px 16px;
+            font-size: 0.9rem;
+        }
+        
+        nav button:hover {
+            background: none;
+            color: #1a1a2e;
+        }
+        
+        nav button.active {
+            color: #1a1a2e;
+        }
+        
+        /* Add padding at bottom so content doesn't hide behind nav */
+        body {
+            padding-bottom: 80px;
+        }
+
+        /* ============================================
+           PAGE CONTAINERS
+           ============================================ */
+        
+        .page {
+            display: none;
+        }
+        
+        .page.active {
+            display: block;
+        }
+
+        /* ============================================
+           CALENDAR STYLES
+           ============================================ */
+        
+        .calendar-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+        }
+        
+        .calendar-header h3 {
+            font-weight: 500;
+            font-size: 1.1rem;
+            color: #1a1a2e;
+        }
+        
+        .calendar-header button {
+            background: none;
+            color: #636e72;
+            padding: 8px 12px;
+            font-size: 1.2rem;
+        }
+        
+        .calendar-header button:hover {
+            color: #1a1a2e;
+        }
+        
+        .calendar-grid {
+            display: grid;
+            grid-template-columns: repeat(7, 1fr);
+            gap: 4px;
+        }
+        
+        .calendar-grid .day-label {
+            text-align: center;
+            font-size: 0.75rem;
+            color: #9a9a9a;
+            padding: 8px 0;
+            font-weight: 500;
+        }
+        
+        .calendar-grid .day {
+            aspect-ratio: 1;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            border-radius: 8px;
+            font-size: 0.9rem;
+            color: #4a4a4a;
+        }
+        
+        .calendar-grid .day.other-month {
+            color: #d0d0d0;
+        }
+        
+        .calendar-grid .day.has-expense {
+            background: #f0f4f8;
+        }
+        
+        .calendar-grid .day .amount {
+            font-size: 0.65rem;
+            color: #e74c3c;
+            font-weight: 600;
+            margin-top: 2px;
+        }
+        
+        .calendar-grid .day.has-expense {
+            cursor: pointer;
+        }
+        
+        .calendar-grid .day.has-expense:hover {
+            background: #e3e9f0;
+        }
+
+        /* ============================================
+           MODAL STYLES
+           ============================================ */
+        
+        .modal-overlay {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(0, 0, 0, 0.4);
+            justify-content: center;
+            align-items: center;
+            z-index: 100;
+        }
+        
+        .modal-overlay.active {
+            display: flex;
+        }
+        
+        .modal {
+            background: #ffffff;
+            border-radius: 12px;
+            padding: 24px;
+            width: 90%;
+            max-width: 340px;
+            max-height: 80vh;
+            overflow-y: auto;
+        }
+        
+        .modal-header {
+            position: relative;
+            text-align: center;
+            margin-bottom: 16px;
+        }
+        
+        .modal-header h3 {
+            font-weight: 600;
+            font-size: 1.1rem;
+            color: #1a1a2e;
+        }
+        
+        .modal-close {
+            position: absolute;
+            right: 0;
+            top: 50%;
+            transform: translateY(-50%);
+            background: none;
+            color: #9a9a9a;
+            font-size: 1.5rem;
+            padding: 0;
+            line-height: 1;
+        }
+        
+        .modal-close:hover {
+            color: #1a1a2e;
+            background: none;
+        }
+        
+        .modal-expense {
+            padding: 12px;
+            margin: 0 -12px;
+            border-bottom: 1px solid #f0f0f0;
+            border-radius: 8px;
+        }
+        
+        .modal-expense:last-child {
+            border-bottom: none;
+        }
+        
+        .modal-expense.expense-item:hover {
+            background: #f8f9fa;
+        }
+        
+        .modal-total {
+            margin-top: 16px;
+            padding-top: 16px;
+            border-top: 2px solid #f0f0f0;
+            font-weight: 600;
+            text-align: right;
+        }
+
+        /* ============================================
+           TRENDS PAGE STYLES
+           ============================================ */
+        
+        .stats-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 12px;
+        }
+        
+        .stat-box {
+            background: #f8f9fa;
+            border-radius: 8px;
+            padding: 20px 16px;
+            text-align: center;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            height: 90px;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.06);
+        }
+        
+        .stat-value {
+            font-size: 1.3rem;
+            font-weight: 600;
+            color: #1a1a2e;
+        }
+        
+        .stat-label {
+            font-size: 0.7rem;
+            color: #9a9a9a;
+            margin-top: 6px;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+        
+        .category-item {
+            display: block;
+            padding: 12px 0;
+            border-bottom: 1px solid #f0f0f0;
+            text-align: left;
+            width: 100%;
+        }
+        
+        .category-item:last-child {
+            border-bottom: none;
+        }
+        
+        #category-breakdown {
+            display: flex;
+            flex-direction: column;
+            align-items: flex-start;
+            text-align: left;
+        }
+        
+        .no-data-message {
+            text-align: center;
+            color: #9a9a9a;
+            padding: 40px 0;
+        }
+        
+        .month-history-item {
+            padding: 10px 0;
+            text-align: center;
+            color: #d0d0d0;
+            font-size: 0.9rem;
+        }
+        
+        .month-history-item.has-data {
+            color: #1a1a2e;
+            cursor: pointer;
+            transition: color 0.2s;
+        }
+        
+        .month-history-item.has-data:hover {
+            color: #4a6fa5;
+        }
+        
+        #monthly-history {
+            display: grid;
+            grid-template-columns: repeat(6, 1fr);
+            gap: 8px;
+        }
+        
+        .year-selector {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            gap: 20px;
+            margin-bottom: 20px;
+        }
+        
+        .year-selector button {
+            background: none;
+            color: #636e72;
+            padding: 8px 12px;
+            font-size: 1.2rem;
+        }
+        
+        .year-selector button:hover {
+            color: #1a1a2e;
+            background: none;
+        }
+        
+        .year-selector span {
+            font-size: 1.1rem;
+            font-weight: 600;
+            color: #1a1a2e;
+        }
+        
+        /* Month detail modal */
+        .modal-stat-row {
+            display: flex;
+            justify-content: space-between;
+            padding: 12px 0;
+            border-bottom: 1px solid #f0f0f0;
+        }
+        
+        .modal-stat-row:last-child {
+            border-bottom: none;
+        }
+        
+        .modal-stat-label {
+            color: #636e72;
+        }
+        
+        .modal-stat-value {
+            font-weight: 600;
+            color: #1a1a2e;
+        }
+        
+        /* Edit modal form */
+        .modal-form label {
+            display: block;
+            font-size: 0.85rem;
+            color: #636e72;
+            margin-bottom: 6px;
+            margin-top: 16px;
+        }
+        
+        .modal-form label:first-of-type {
+            margin-top: 0;
+        }
+        
+        .modal-form input,
+        .modal-form select {
+            width: 100%;
+            padding: 10px 12px;
+            border: 1px solid #e0e0e0;
+            border-radius: 8px;
+            font-size: 1rem;
+            background: #fafafa;
+        }
+        
+        .modal-form input:focus,
+        .modal-form select:focus {
+            outline: none;
+            border-color: #4a6fa5;
+            background: #ffffff;
+        }
+        
+        .modal-buttons {
+            display: flex;
+            gap: 10px;
+            margin-top: 20px;
+        }
+        
+        .modal-buttons button {
+            flex: 1;
+            padding: 12px;
+        }
+        
+        .btn-delete {
+            background: #e74c3c;
+        }
+        
+        .btn-delete:hover {
+            background: #c0392b;
+        }
+        
+        .btn-save {
+            background: #1a1a2e;
+        }
+        
+        /* Clickable expense items */
+        .expense-item {
+            cursor: pointer;
+            transition: background-color 0.2s;
+            margin: 0 -12px;
+            padding: 12px;
+            border-radius: 8px;
+        }
+        
+        .expense-item:hover {
+            background: #f8f9fa;
+        }
+    </style>
+</head>
+<body>
+
+    <!-- App Header -->
+    <header>
+        <h1>Expense Tracker</h1>
+    </header>
+
+    <!-- ============================================
+         HOME PAGE
+         ============================================ -->
+    <div id="home-page" class="page active">
+        
+        <!-- Budget Section -->
+        <section>
+            <h2>Monthly Budget</h2>
+            <div>
+                <label>Set Budget: $</label>
+                <input type="number" id="budget-input" placeholder="0.00">
+                <button id="set-budget-btn">Set</button>
+            </div>
+            <p>Budget: $<span id="budget-display">0</span></p>
+            <p>Spent: $<span id="spent-display">0</span></p>
+            <p>Remaining: $<span id="remaining-display">0</span></p>
+        </section>
+
+        <!-- Add Expense Form -->
+        <section>
+            <h2>Add Expense</h2>
+            
+            <label>Amount</label>
+            <input type="number" id="amount-input" placeholder="0.00">
+            
+            <label>Category</label>
+            <select id="category-input">
+                <option value="Food">Food</option>
+                <option value="Transport">Transport</option>
+                <option value="Entertainment">Entertainment</option>
+                <option value="Bills">Bills</option>
+                <option value="Shopping">Shopping</option>
+                <option value="Health">Health</option>
+                <option value="Other">Other</option>
+            </select>
+            
+            <label>Description</label>
+            <input type="text" id="description-input" placeholder="What did you spend on?">
+            
+            <label>Date</label>
+            <input type="date" id="date-input">
+            
+            <button id="add-expense-btn">Add Expense</button>
+        </section>
+
+        <!-- Expense List -->
+        <section>
+            <h2>Recent Expenses</h2>
+            <div id="expense-list">
+                <p>No expenses yet.</p>
+            </div>
+        </section>
+        
+    </div>
+
+    <!-- ============================================
+         HISTORY PAGE (Calendar)
+         ============================================ -->
+    <div id="history-page" class="page">
+        
+        <section>
+            <div class="calendar-header">
+                <button id="prev-month-btn">‹</button>
+                <h3 id="calendar-month-label">January 2025</h3>
+                <button id="next-month-btn">›</button>
+            </div>
+            <div class="calendar-grid" id="calendar-grid">
+                <!-- Calendar days will be generated by JavaScript -->
+            </div>
+        </section>
+        
+    </div>
+
+    <!-- ============================================
+         TRENDS PAGE
+         ============================================ -->
+    <div id="trends-page" class="page">
+        
+        <!-- Key Stats -->
+        <section>
+            <h2>This Month</h2>
+            <div class="stats-grid">
+                <div class="stat-box">
+                    <div class="stat-value" id="stat-total-spent">$0</div>
+                    <div class="stat-label">Total Spent</div>
+                </div>
+                <div class="stat-box">
+                    <div class="stat-value" id="stat-avg-daily">$0</div>
+                    <div class="stat-label">Avg / Day</div>
+                </div>
+                <div class="stat-box">
+                    <div class="stat-value" id="stat-avg-transaction">$0</div>
+                    <div class="stat-label">Avg / Transaction</div>
+                </div>
+                <div class="stat-box">
+                    <div class="stat-value" id="stat-transaction-count">0</div>
+                    <div class="stat-label">Transactions</div>
+                </div>
+            </div>
+        </section>
+        
+        <!-- Spending by Category -->
+        <section>
+            <h2>Spending by Category</h2>
+            <div id="category-breakdown">
+                <!-- Category bars will be generated by JavaScript -->
+            </div>
+        </section>
+        
+        <!-- Monthly History -->
+        <section>
+            <h2>Monthly History</h2>
+            <div class="year-selector">
+                <button id="prev-year-btn">‹</button>
+                <span id="history-year-label">2026</span>
+                <button id="next-year-btn">›</button>
+            </div>
+            <div id="monthly-history">
+                <!-- Month grid will be generated by JavaScript -->
+            </div>
+        </section>
+        
+    </div>
+
+    <!-- ============================================
+         NAVIGATION BAR
+         ============================================ -->
+    <nav>
+        <button id="nav-home" class="active">Home</button>
+        <button id="nav-history">History</button>
+        <button id="nav-trends">Trends</button>
+    </nav>
+
+    <!-- ============================================
+         EXPENSE DETAIL MODAL
+         ============================================ -->
+    <div class="modal-overlay" id="modal-overlay">
+        <div class="modal">
+            <div class="modal-header">
+                <h3 id="modal-date">January 15, 2026</h3>
+                <button class="modal-close" id="modal-close">×</button>
+            </div>
+            <div id="modal-expenses">
+                <!-- Expense details will be inserted here -->
+            </div>
+            <div class="modal-total" id="modal-total">
+                Total: $0.00
+            </div>
+        </div>
+    </div>
+
+    <!-- ============================================
+         MONTH DETAIL MODAL
+         ============================================ -->
+    <div class="modal-overlay" id="month-modal-overlay">
+        <div class="modal">
+            <div class="modal-header">
+                <h3 id="month-modal-title">January 2026</h3>
+                <button class="modal-close" id="month-modal-close">×</button>
+            </div>
+            <div id="month-modal-content">
+                <!-- Month stats will be inserted here -->
+            </div>
+        </div>
+    </div>
+
+    <!-- ============================================
+         EDIT EXPENSE MODAL
+         ============================================ -->
+    <div class="modal-overlay" id="edit-modal-overlay">
+        <div class="modal">
+            <div class="modal-header">
+                <h3>Edit Expense</h3>
+                <button class="modal-close" id="edit-modal-close">×</button>
+            </div>
+            <div class="modal-form">
+                <label>Amount</label>
+                <input type="number" id="edit-amount" placeholder="0.00">
+                
+                <label>Category</label>
+                <select id="edit-category">
+                    <option value="Food">Food</option>
+                    <option value="Transport">Transport</option>
+                    <option value="Entertainment">Entertainment</option>
+                    <option value="Bills">Bills</option>
+                    <option value="Shopping">Shopping</option>
+                    <option value="Health">Health</option>
+                    <option value="Other">Other</option>
+                </select>
+                
+                <label>Description</label>
+                <input type="text" id="edit-description" placeholder="What did you spend on?">
+                
+                <label>Date</label>
+                <input type="date" id="edit-date">
+                
+                <div class="modal-buttons">
+                    <button class="btn-delete" id="edit-delete-btn">Delete</button>
+                    <button class="btn-save" id="edit-save-btn">Save</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- JavaScript - The Brain of our App -->
+    <script>
+        // ============================================
+        // STEP 1: Create variables to store our data
+        // ============================================
+        
+        // This array will hold all our expenses (like a list)
+        // We try to load saved expenses, or start with empty array
+        let expenses = loadFromStorage('expenses', []);
+        
+        // This stores our monthly budget
+        // We try to load saved budget, or start with 0
+        let monthlyBudget = loadFromStorage('monthlyBudget', 0);
+
+        // ============================================
+        // STORAGE FUNCTIONS: Save and Load data
+        // ============================================
+        
+        // This function saves data to localStorage
+        function saveToStorage(key, data) {
+            // Convert data to text (JSON format) and save it
+            localStorage.setItem(key, JSON.stringify(data));
+        }
+        
+        // This function loads data from localStorage
+        function loadFromStorage(key, defaultValue) {
+            // Try to get the saved data
+            let saved = localStorage.getItem(key);
+            
+            // If nothing was saved, return the default value
+            if (saved === null) {
+                return defaultValue;
+            }
+            
+            // Convert from text (JSON) back to usable data
+            return JSON.parse(saved);
+        }
+
+        // ============================================
+        // STEP 2: Find the HTML elements we need
+        // ============================================
+        
+        // Budget elements
+        const budgetInput = document.getElementById('budget-input');
+        const setBudgetBtn = document.getElementById('set-budget-btn');
+        const budgetDisplay = document.getElementById('budget-display');
+        const spentDisplay = document.getElementById('spent-display');
+        const remainingDisplay = document.getElementById('remaining-display');
+        
+        // Expense form elements
+        const amountInput = document.getElementById('amount-input');
+        const categoryInput = document.getElementById('category-input');
+        const descriptionInput = document.getElementById('description-input');
+        const dateInput = document.getElementById('date-input');
+        const addExpenseBtn = document.getElementById('add-expense-btn');
+        
+        // Expense list container
+        const expenseList = document.getElementById('expense-list');
+
+        // ============================================
+        // STEP 3: Create functions (reusable actions)
+        // ============================================
+        
+        // This function updates the budget display
+        function updateDisplay() {
+            // Get current month and year
+            let now = new Date();
+            let currentMonth = now.getMonth();
+            let currentYear = now.getFullYear();
+            
+            // Calculate total spent for CURRENT MONTH ONLY
+            let totalSpent = 0;
+            for (let i = 0; i < expenses.length; i++) {
+                let expenseDate = new Date(expenses[i].date);
+                if (expenseDate.getMonth() === currentMonth && expenseDate.getFullYear() === currentYear) {
+                    totalSpent = totalSpent + expenses[i].amount;
+                }
+            }
+            
+            // Calculate remaining
+            let remaining = monthlyBudget - totalSpent;
+            
+            // Update the numbers shown on screen
+            budgetDisplay.textContent = monthlyBudget.toFixed(2);
+            spentDisplay.textContent = totalSpent.toFixed(2);
+            remainingDisplay.textContent = remaining.toFixed(2);
+        }
+        
+        // This function displays all expenses in the list
+        function displayExpenses() {
+            // If no expenses, show message
+            if (expenses.length === 0) {
+                expenseList.innerHTML = '<p>No expenses yet.</p>';
+                return;
+            }
+            
+            // Get only the last 3 expenses (most recent first)
+            let recentExpenses = expenses.slice(-3).reverse();
+            
+            // Build the HTML for each expense
+            let html = '';
+            for (let i = 0; i < recentExpenses.length; i++) {
+                let expense = recentExpenses[i];
+                // Find the actual index in the full expenses array
+                let actualIndex = expenses.indexOf(expense);
+                html = html + '<div class="expense-item" data-expense-index="' + actualIndex + '">';
+                html = html + '<div><strong>' + expense.category + ':</strong> $' + expense.amount.toFixed(2) + '</div>';
+                html = html + '<div style="color: #9a9a9a; font-size: 0.85rem; margin-top: 4px;">' + expense.description + ' · ' + expense.date + '</div>';
+                html = html + '</div>';
+            }
+            
+            // Put the HTML into the expense list container
+            expenseList.innerHTML = html;
+            
+            // Add click handlers to open edit modal
+            let items = expenseList.querySelectorAll('.expense-item');
+            for (let i = 0; i < items.length; i++) {
+                items[i].addEventListener('click', function() {
+                    let index = parseInt(this.getAttribute('data-expense-index'));
+                    openEditModal(index);
+                });
+            }
+        }
+
+        // ============================================
+        // STEP 4: Set up button click actions
+        // ============================================
+        
+        // When "Set" budget button is clicked
+        setBudgetBtn.addEventListener('click', function() {
+            // Get the value from the input and convert to a number
+            monthlyBudget = parseFloat(budgetInput.value) || 0;
+            
+            // Save to localStorage so it persists
+            saveToStorage('monthlyBudget', monthlyBudget);
+            
+            // Update the display
+            updateDisplay();
+            
+            // Clear the input
+            budgetInput.value = '';
+        });
+        
+        // When "Add Expense" button is clicked
+        addExpenseBtn.addEventListener('click', function() {
+            // Get values from all inputs
+            let amount = parseFloat(amountInput.value);
+            let category = categoryInput.value;
+            let description = descriptionInput.value;
+            let date = dateInput.value;
+            
+            // Check if amount is valid
+            if (!amount || amount <= 0) {
+                alert('Please enter a valid amount');
+                return;
+            }
+            
+            // Check if date is entered
+            if (!date) {
+                alert('Please enter a date');
+                return;
+            }
+            
+            // Create an expense object (a bundle of related data)
+            let expense = {
+                amount: amount,
+                category: category,
+                description: description,
+                date: date
+            };
+            
+            // Add to our list of expenses
+            expenses.push(expense);
+            
+            // Save to localStorage so it persists
+            saveToStorage('expenses', expenses);
+            
+            // Update what's shown on screen
+            updateDisplay();
+            displayExpenses();
+            
+            // Clear the form inputs
+            amountInput.value = '';
+            descriptionInput.value = '';
+            dateInput.value = '';
+        });
+
+        // ============================================
+        // STEP 5: Load saved data when page opens
+        // ============================================
+        
+        // Show any saved data right away
+        updateDisplay();
+        displayExpenses();
+
+        // ============================================
+        // NAVIGATION: Switching between pages
+        // ============================================
+        
+        const navHome = document.getElementById('nav-home');
+        const navHistory = document.getElementById('nav-history');
+        const navTrends = document.getElementById('nav-trends');
+        const homePage = document.getElementById('home-page');
+        const historyPage = document.getElementById('history-page');
+        const trendsPage = document.getElementById('trends-page');
+        
+        navHome.addEventListener('click', function() {
+            // Show home page, hide others
+            homePage.classList.add('active');
+            historyPage.classList.remove('active');
+            trendsPage.classList.remove('active');
+            
+            // Update nav button styles
+            navHome.classList.add('active');
+            navHistory.classList.remove('active');
+            navTrends.classList.remove('active');
+        });
+        
+        navHistory.addEventListener('click', function() {
+            // Show history page, hide others
+            historyPage.classList.add('active');
+            homePage.classList.remove('active');
+            trendsPage.classList.remove('active');
+            
+            // Update nav button styles
+            navHistory.classList.add('active');
+            navHome.classList.remove('active');
+            navTrends.classList.remove('active');
+            
+            // Render the calendar
+            renderCalendar();
+        });
+        
+        navTrends.addEventListener('click', function() {
+            // Show trends page, hide others
+            trendsPage.classList.add('active');
+            homePage.classList.remove('active');
+            historyPage.classList.remove('active');
+            
+            // Update nav button styles
+            navTrends.classList.add('active');
+            navHome.classList.remove('active');
+            navHistory.classList.remove('active');
+            
+            // Render the trends
+            renderTrends();
+        });
+
+        // ============================================
+        // CALENDAR: Display monthly view with totals
+        // ============================================
+        
+        // Track which month we're viewing
+        let currentCalendarDate = new Date();
+        
+        const calendarGrid = document.getElementById('calendar-grid');
+        const calendarMonthLabel = document.getElementById('calendar-month-label');
+        const prevMonthBtn = document.getElementById('prev-month-btn');
+        const nextMonthBtn = document.getElementById('next-month-btn');
+        
+        // Month navigation
+        prevMonthBtn.addEventListener('click', function() {
+            currentCalendarDate.setMonth(currentCalendarDate.getMonth() - 1);
+            renderCalendar();
+        });
+        
+        nextMonthBtn.addEventListener('click', function() {
+            currentCalendarDate.setMonth(currentCalendarDate.getMonth() + 1);
+            renderCalendar();
+        });
+        
+        // Calculate daily totals from expenses
+        function getDailyTotals() {
+            let totals = {};
+            
+            for (let i = 0; i < expenses.length; i++) {
+                let date = expenses[i].date;
+                if (totals[date]) {
+                    totals[date] = totals[date] + expenses[i].amount;
+                } else {
+                    totals[date] = expenses[i].amount;
+                }
+            }
+            
+            return totals;
+        }
+        
+        // Render the calendar
+        function renderCalendar() {
+            let year = currentCalendarDate.getFullYear();
+            let month = currentCalendarDate.getMonth();
+            
+            // Update the month label
+            let monthNames = ['January', 'February', 'March', 'April', 'May', 'June',
+                              'July', 'August', 'September', 'October', 'November', 'December'];
+            calendarMonthLabel.textContent = monthNames[month] + ' ' + year;
+            
+            // Get first day of month and number of days
+            let firstDay = new Date(year, month, 1).getDay();
+            let daysInMonth = new Date(year, month + 1, 0).getDate();
+            let daysInPrevMonth = new Date(year, month, 0).getDate();
+            
+            // Get daily expense totals
+            let dailyTotals = getDailyTotals();
+            
+            // Build calendar HTML
+            let html = '';
+            
+            // Day labels (Sun-Sat)
+            let dayLabels = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
+            for (let i = 0; i < 7; i++) {
+                html = html + '<div class="day-label">' + dayLabels[i] + '</div>';
+            }
+            
+            // Previous month's trailing days
+            for (let i = firstDay - 1; i >= 0; i--) {
+                let day = daysInPrevMonth - i;
+                html = html + '<div class="day other-month">' + day + '</div>';
+            }
+            
+            // Current month's days
+            for (let day = 1; day <= daysInMonth; day++) {
+                // Format date to match our expense date format (YYYY-MM-DD)
+                let dateStr = year + '-' + String(month + 1).padStart(2, '0') + '-' + String(day).padStart(2, '0');
+                
+                let hasExpense = dailyTotals[dateStr] ? true : false;
+                let classes = 'day';
+                if (hasExpense) {
+                    classes = classes + ' has-expense';
+                }
+                
+                html = html + '<div class="' + classes + '"' + (hasExpense ? ' data-date="' + dateStr + '"' : '') + '>';
+                html = html + day;
+                if (hasExpense) {
+                    html = html + '<span class="amount">$' + dailyTotals[dateStr].toFixed(0) + '</span>';
+                }
+                html = html + '</div>';
+            }
+            
+            // Next month's leading days (fill remaining cells)
+            let totalCells = firstDay + daysInMonth;
+            let remainingCells = 7 - (totalCells % 7);
+            if (remainingCells < 7) {
+                for (let day = 1; day <= remainingCells; day++) {
+                    html = html + '<div class="day other-month">' + day + '</div>';
+                }
+            }
+            
+            calendarGrid.innerHTML = html;
+            
+            // Add click handlers to days with expenses
+            let expenseDays = calendarGrid.querySelectorAll('.day.has-expense');
+            for (let i = 0; i < expenseDays.length; i++) {
+                expenseDays[i].addEventListener('click', function() {
+                    let dateStr = this.getAttribute('data-date');
+                    openExpenseModal(dateStr);
+                });
+            }
+        }
+
+        // ============================================
+        // MODAL: Show expense details for a day
+        // ============================================
+        
+        const modalOverlay = document.getElementById('modal-overlay');
+        const modalClose = document.getElementById('modal-close');
+        const modalDate = document.getElementById('modal-date');
+        const modalExpenses = document.getElementById('modal-expenses');
+        const modalTotal = document.getElementById('modal-total');
+        
+        function openExpenseModal(dateStr) {
+            // Format the date nicely for display
+            let dateParts = dateStr.split('-');
+            let dateObj = new Date(dateParts[0], dateParts[1] - 1, dateParts[2]);
+            let monthNames = ['January', 'February', 'March', 'April', 'May', 'June',
+                              'July', 'August', 'September', 'October', 'November', 'December'];
+            let formattedDate = monthNames[dateObj.getMonth()] + ' ' + dateObj.getDate() + ', ' + dateObj.getFullYear();
+            modalDate.textContent = formattedDate;
+            
+            // Find all expenses for this date
+            let dayExpenses = [];
+            for (let i = 0; i < expenses.length; i++) {
+                if (expenses[i].date === dateStr) {
+                    dayExpenses.push({ expense: expenses[i], index: i });
+                }
+            }
+            
+            // Build expense list HTML
+            let html = '';
+            let total = 0;
+            for (let i = 0; i < dayExpenses.length; i++) {
+                let expense = dayExpenses[i].expense;
+                let index = dayExpenses[i].index;
+                total = total + expense.amount;
+                html = html + '<div class="modal-expense expense-item" data-expense-index="' + index + '">';
+                html = html + '<div><strong>' + expense.category + ':</strong> $' + expense.amount.toFixed(2) + '</div>';
+                if (expense.description) {
+                    html = html + '<div style="color: #9a9a9a; font-size: 0.85rem; margin-top: 4px;">' + expense.description + '</div>';
+                }
+                html = html + '</div>';
+            }
+            
+            modalExpenses.innerHTML = html;
+            modalTotal.textContent = 'Total: $' + total.toFixed(2);
+            
+            // Add click handlers to open edit modal
+            let items = modalExpenses.querySelectorAll('.expense-item');
+            for (let i = 0; i < items.length; i++) {
+                items[i].addEventListener('click', function() {
+                    let index = parseInt(this.getAttribute('data-expense-index'));
+                    closeModal();
+                    openEditModal(index);
+                });
+            }
+            
+            // Show the modal
+            modalOverlay.classList.add('active');
+        }
+        
+        function closeModal() {
+            modalOverlay.classList.remove('active');
+        }
+        
+        // Close modal when clicking X button
+        modalClose.addEventListener('click', closeModal);
+        
+        // Close modal when clicking outside of it
+        modalOverlay.addEventListener('click', function(e) {
+            if (e.target === modalOverlay) {
+                closeModal();
+            }
+        });
+
+        // ============================================
+        // TRENDS: Calculate and display statistics
+        // ============================================
+        
+        const statTotalSpent = document.getElementById('stat-total-spent');
+        const statAvgDaily = document.getElementById('stat-avg-daily');
+        const statAvgTransaction = document.getElementById('stat-avg-transaction');
+        const statTransactionCount = document.getElementById('stat-transaction-count');
+        const categoryBreakdown = document.getElementById('category-breakdown');
+        
+        function renderTrends() {
+            // Get current month and year
+            let now = new Date();
+            let currentMonth = now.getMonth();
+            let currentYear = now.getFullYear();
+            
+            // Filter expenses for current month
+            let monthExpenses = [];
+            for (let i = 0; i < expenses.length; i++) {
+                let expenseDate = new Date(expenses[i].date);
+                if (expenseDate.getMonth() === currentMonth && expenseDate.getFullYear() === currentYear) {
+                    monthExpenses.push(expenses[i]);
+                }
+            }
+            
+            // Calculate stats
+            let totalSpent = 0;
+            for (let i = 0; i < monthExpenses.length; i++) {
+                totalSpent = totalSpent + monthExpenses[i].amount;
+            }
+            
+            // Days elapsed in current month
+            let daysElapsed = now.getDate();
+            let avgDaily = daysElapsed > 0 ? totalSpent / daysElapsed : 0;
+            
+            // Average per transaction
+            let avgTransaction = monthExpenses.length > 0 ? totalSpent / monthExpenses.length : 0;
+            
+            // Update stat displays
+            statTotalSpent.textContent = '$' + totalSpent.toFixed(0);
+            statAvgDaily.textContent = '$' + avgDaily.toFixed(0);
+            statAvgTransaction.textContent = '$' + avgTransaction.toFixed(0);
+            statTransactionCount.textContent = monthExpenses.length;
+            
+            // Calculate category breakdown
+            let categoryTotals = {};
+            for (let i = 0; i < monthExpenses.length; i++) {
+                let category = monthExpenses[i].category;
+                if (categoryTotals[category]) {
+                    categoryTotals[category] = categoryTotals[category] + monthExpenses[i].amount;
+                } else {
+                    categoryTotals[category] = monthExpenses[i].amount;
+                }
+            }
+            
+            // Convert to array and sort by amount (highest first)
+            let categoryArray = [];
+            for (let category in categoryTotals) {
+                categoryArray.push({
+                    name: category,
+                    amount: categoryTotals[category]
+                });
+            }
+            categoryArray.sort(function(a, b) {
+                return b.amount - a.amount;
+            });
+            
+            // Build category list HTML
+            if (categoryArray.length === 0) {
+                categoryBreakdown.innerHTML = '<p class="no-data-message">No expenses this month yet.</p>';
+            } else {
+                let html = '';
+                for (let i = 0; i < categoryArray.length; i++) {
+                    let cat = categoryArray[i];
+                    html = html + '<div class="category-item">';
+                    html = html + '<strong>' + cat.name + ':</strong> $' + cat.amount.toFixed(2);
+                    html = html + '</div>';
+                }
+                categoryBreakdown.innerHTML = html;
+            }
+            
+            // Render monthly history
+            renderMonthlyHistory();
+        }
+        
+        // ============================================
+        // MONTHLY HISTORY: Show trends for all months
+        // ============================================
+        
+        const monthlyHistory = document.getElementById('monthly-history');
+        const monthModalOverlay = document.getElementById('month-modal-overlay');
+        const monthModalClose = document.getElementById('month-modal-close');
+        const monthModalTitle = document.getElementById('month-modal-title');
+        const monthModalContent = document.getElementById('month-modal-content');
+        const historyYearLabel = document.getElementById('history-year-label');
+        const prevYearBtn = document.getElementById('prev-year-btn');
+        const nextYearBtn = document.getElementById('next-year-btn');
+        
+        const monthNames = ['January', 'February', 'March', 'April', 'May', 'June',
+                          'July', 'August', 'September', 'October', 'November', 'December'];
+        
+        const monthShortNames = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun',
+                                 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+        
+        let currentHistoryYear = new Date().getFullYear();
+        
+        // Year navigation
+        prevYearBtn.addEventListener('click', function() {
+            currentHistoryYear--;
+            renderMonthlyHistory();
+        });
+        
+        nextYearBtn.addEventListener('click', function() {
+            currentHistoryYear++;
+            renderMonthlyHistory();
+        });
+        
+        function renderMonthlyHistory() {
+            // Update year label
+            historyYearLabel.textContent = currentHistoryYear;
+            
+            // Group expenses by month
+            let monthlyData = {};
+            
+            for (let i = 0; i < expenses.length; i++) {
+                let expenseDate = new Date(expenses[i].date);
+                let monthKey = expenseDate.getFullYear() + '-' + String(expenseDate.getMonth() + 1).padStart(2, '0');
+                
+                if (!monthlyData[monthKey]) {
+                    monthlyData[monthKey] = {
+                        total: 0,
+                        count: 0,
+                        year: expenseDate.getFullYear(),
+                        month: expenseDate.getMonth(),
+                        categories: {}
+                    };
+                }
+                
+                monthlyData[monthKey].total += expenses[i].amount;
+                monthlyData[monthKey].count += 1;
+                
+                // Track category totals
+                let cat = expenses[i].category;
+                if (!monthlyData[monthKey].categories[cat]) {
+                    monthlyData[monthKey].categories[cat] = 0;
+                }
+                monthlyData[monthKey].categories[cat] += expenses[i].amount;
+            }
+            
+            // Store for modal access
+            window.monthlyData = monthlyData;
+            
+            // Build HTML - grid of all 12 months
+            let html = '';
+            for (let m = 0; m < 12; m++) {
+                let monthKey = currentHistoryYear + '-' + String(m + 1).padStart(2, '0');
+                let hasData = monthlyData[monthKey] ? true : false;
+                
+                html = html + '<div class="month-history-item' + (hasData ? ' has-data' : '') + '"';
+                if (hasData) {
+                    html = html + ' data-month-key="' + monthKey + '"';
+                }
+                html = html + '>';
+                html = html + monthShortNames[m];
+                html = html + '</div>';
+            }
+            monthlyHistory.innerHTML = html;
+            
+            // Add click handlers to months with data
+            let items = monthlyHistory.querySelectorAll('.month-history-item.has-data');
+            for (let i = 0; i < items.length; i++) {
+                items[i].addEventListener('click', function() {
+                    let monthKey = this.getAttribute('data-month-key');
+                    openMonthModal(monthKey);
+                });
+            }
+        }
+        
+        function openMonthModal(monthKey) {
+            let m = window.monthlyData[monthKey];
+            
+            // Set title
+            monthModalTitle.textContent = monthNames[m.month] + ' ' + m.year;
+            
+            // Calculate stats
+            let avgPerTransaction = m.total / m.count;
+            
+            // Find top category
+            let topCategory = '';
+            let topAmount = 0;
+            for (let cat in m.categories) {
+                if (m.categories[cat] > topAmount) {
+                    topAmount = m.categories[cat];
+                    topCategory = cat;
+                }
+            }
+            
+            // Build content
+            let html = '';
+            html = html + '<div class="modal-stat-row"><span class="modal-stat-label">Total Spent</span><span class="modal-stat-value">$' + m.total.toFixed(2) + '</span></div>';
+            html = html + '<div class="modal-stat-row"><span class="modal-stat-label">Transactions</span><span class="modal-stat-value">' + m.count + '</span></div>';
+            html = html + '<div class="modal-stat-row"><span class="modal-stat-label">Avg / Transaction</span><span class="modal-stat-value">$' + avgPerTransaction.toFixed(2) + '</span></div>';
+            html = html + '<div class="modal-stat-row"><span class="modal-stat-label">Top Category</span><span class="modal-stat-value">' + topCategory + '</span></div>';
+            
+            monthModalContent.innerHTML = html;
+            
+            // Show modal
+            monthModalOverlay.classList.add('active');
+        }
+        
+        function closeMonthModal() {
+            monthModalOverlay.classList.remove('active');
+        }
+        
+        // Close modal when clicking X button
+        monthModalClose.addEventListener('click', closeMonthModal);
+        
+        // Close modal when clicking outside of it
+        monthModalOverlay.addEventListener('click', function(e) {
+            if (e.target === monthModalOverlay) {
+                closeMonthModal();
+            }
+        });
+
+        // ============================================
+        // EDIT MODAL: Edit or delete an expense
+        // ============================================
+        
+        const editModalOverlay = document.getElementById('edit-modal-overlay');
+        const editModalClose = document.getElementById('edit-modal-close');
+        const editAmount = document.getElementById('edit-amount');
+        const editCategory = document.getElementById('edit-category');
+        const editDescription = document.getElementById('edit-description');
+        const editDate = document.getElementById('edit-date');
+        const editDeleteBtn = document.getElementById('edit-delete-btn');
+        const editSaveBtn = document.getElementById('edit-save-btn');
+        
+        let currentEditIndex = null;
+        
+        function openEditModal(index) {
+            currentEditIndex = index;
+            let expense = expenses[index];
+            
+            // Fill in the form with current values
+            editAmount.value = expense.amount;
+            editCategory.value = expense.category;
+            editDescription.value = expense.description;
+            editDate.value = expense.date;
+            
+            // Show the modal
+            editModalOverlay.classList.add('active');
+        }
+        
+        function closeEditModal() {
+            editModalOverlay.classList.remove('active');
+            currentEditIndex = null;
+        }
+        
+        // Close modal when clicking X button
+        editModalClose.addEventListener('click', closeEditModal);
+        
+        // Close modal when clicking outside of it
+        editModalOverlay.addEventListener('click', function(e) {
+            if (e.target === editModalOverlay) {
+                closeEditModal();
+            }
+        });
+        
+        // Save edited expense
+        editSaveBtn.addEventListener('click', function() {
+            if (currentEditIndex === null) return;
+            
+            let amount = parseFloat(editAmount.value);
+            if (!amount || amount <= 0) {
+                alert('Please enter a valid amount');
+                return;
+            }
+            
+            if (!editDate.value) {
+                alert('Please enter a date');
+                return;
+            }
+            
+            // Update the expense
+            expenses[currentEditIndex] = {
+                amount: amount,
+                category: editCategory.value,
+                description: editDescription.value,
+                date: editDate.value
+            };
+            
+            // Save to localStorage
+            saveToStorage('expenses', expenses);
+            
+            // Update displays
+            updateDisplay();
+            displayExpenses();
+            renderCalendar();
+            
+            // Close modal
+            closeEditModal();
+        });
+        
+        // Delete expense
+        editDeleteBtn.addEventListener('click', function() {
+            if (currentEditIndex === null) return;
+            
+            if (confirm('Are you sure you want to delete this expense?')) {
+                // Remove the expense from array
+                expenses.splice(currentEditIndex, 1);
+                
+                // Save to localStorage
+                saveToStorage('expenses', expenses);
+                
+                // Update displays
+                updateDisplay();
+                displayExpenses();
+                renderCalendar();
+                
+                // Close modal
+                closeEditModal();
+            }
+        });
+
+        // ============================================
+        // REGISTER SERVICE WORKER FOR PWA
+        // ============================================
+        
+        if ('serviceWorker' in navigator) {
+            navigator.serviceWorker.register('sw.js')
+                .then(function(registration) {
+                    console.log('Service Worker registered');
+                })
+                .catch(function(error) {
+                    console.log('Service Worker registration failed:', error);
+                });
+        }
+    </script>
+
+</body>
+</html>
