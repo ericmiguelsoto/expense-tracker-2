@@ -57,6 +57,8 @@
             max-width: 500px;
             margin-left: auto;
             margin-right: auto;
+            box-sizing: border-box;
+            overflow: hidden;
         }
         
         h2 {
@@ -411,28 +413,32 @@
             display: grid;
             grid-template-columns: 1fr 1fr;
             gap: 12px;
+            width: 100%;
+            box-sizing: border-box;
         }
         
         .stat-box {
             background: #f8f9fa;
             border-radius: 8px;
-            padding: 20px 16px;
+            padding: 16px 8px;
             text-align: center;
             display: flex;
             flex-direction: column;
             justify-content: center;
-            height: 90px;
+            height: 85px;
             box-shadow: 0 2px 8px rgba(0, 0, 0, 0.06);
+            box-sizing: border-box;
+            min-width: 0;
         }
         
         .stat-value {
-            font-size: 1.3rem;
+            font-size: 1.2rem;
             font-weight: 600;
             color: #1a1a2e;
         }
         
         .stat-label {
-            font-size: 0.7rem;
+            font-size: 0.65rem;
             color: #9a9a9a;
             margin-top: 6px;
             text-transform: uppercase;
@@ -704,7 +710,7 @@
                 </div>
                 <div class="stat-box">
                     <div class="stat-value" id="stat-transaction-count">0</div>
-                    <div class="stat-label">Transactions</div>
+                    <div class="stat-label">Trans.</div>
                 </div>
             </div>
         </section>
